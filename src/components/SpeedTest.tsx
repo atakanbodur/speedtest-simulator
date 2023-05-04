@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Results from './Results';
+import {SERVER_URL} from "../constants";
 
 const SpeedTest: React.FC = () => {
     const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null);
@@ -8,12 +9,13 @@ const SpeedTest: React.FC = () => {
     const [ping, setPing] = useState<number | null>(null);
     const [progress, setProgress] = useState<number>(0);
 
+
     const handleTest = async () => {
 
         //calculate ping
         setProgress(0);
         const startTimePing = performance.now();
-        const responsePing = await axios.get('<your-server-url>/ping');
+        const responsePing = await axios.get(`${SERVER_URL}/ping`);
         const endTimePing = performance.now();
 
         if (responsePing.status === 200) {
@@ -24,7 +26,7 @@ const SpeedTest: React.FC = () => {
 
         //calculate download
         const startTimeDownload = performance.now();
-        const responseDownload = await axios.get('<your-server-url>/download', { responseType: 'arraybuffer' });
+        const responseDownload = await axios.get(`${SERVER_URL}/download`, { responseType: 'arraybuffer' });
         const endTimeDownload = performance.now();
 
         if (responseDownload.status === 200) {
@@ -39,7 +41,7 @@ const SpeedTest: React.FC = () => {
         const dataSizeUpload = 10 * 1024 * 1024; // 10MB
         const dataUpload = new ArrayBuffer(dataSizeUpload);
         const startTimeUpload = performance.now();
-        const responseUpload = await axios.post('<your-server-url>/upload', dataUpload);
+        const responseUpload = await axios.post(`${SERVER_URL}/upload`, dataUpload);
         const endTimeUpload = performance.now();
 
         if (responseUpload.status === 200) {

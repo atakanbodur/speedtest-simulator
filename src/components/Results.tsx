@@ -12,7 +12,7 @@ const Results: React.FC<ResultsProps> = ({ downloadSpeed, uploadSpeed , ping}) =
             <h2>Results</h2>
             <p>Download Speed: {downloadSpeed ? downloadSpeed.toFixed(2) : 'N/A'} Mbps</p>
             <p>Upload Speed: {uploadSpeed ? uploadSpeed.toFixed(2) : 'N/A'} Mbps</p>
-            <p>Ping: {ping ? ping.toFixed(2) : 'N/A'} Mbps</p>
+            <p>Ping: {ping ? ping.toFixed(2) : 'N/A'} ms</p>
         </div>
     );
 };
