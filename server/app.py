@@ -14,6 +14,7 @@ def hello(name):
 def ping():
     return jsonify({"status": "success"}), 200
 
+@app.route('/download/', methods=['GET'], defaults={'response_size': 10000000})
 @app.route('/download/<int:response_size>', methods=['GET'])
 def download(response_size):
     if response_size and response_size > 0:
