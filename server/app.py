@@ -10,7 +10,7 @@ def ping():
 
 @app.route('/download', methods=['GET'])
 def download():
-    data = b'\0' * (10 * 1024 * 1024) # 10MB of binary data
+    data = b'\0' * (10 ** 3) # 10MB of binary data
     return data, 200
 
 @app.route('/upload', methods=['POST'])
