@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-family: 'Courier New', Courier, monospace;
+  /*font-family: 'Courier New', Courier, monospace;*/
   background-color: #f0f0f0;
 }
 
@@ -8,29 +8,29 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 50px;
 }
 
 h1 {
   font-size: 2rem;
   margin-bottom: 30px;
+  text-align: center;
 }
 
 button {
-  font-size: 1rem;
-  padding: 10px 20px;
+  font-size: 1.2rem;
+  padding: 10px 15px;
   margin: 5px;
-  background-color: #007bff;
+  background-color: #ff2700;
   color: white;
-  border: 2px solid #007bff;
-  border-radius: 5px;
+  border: 2px solid #ff2700;
+  border-radius: 15px;
   cursor: pointer;
   transition: 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
+  background-color: #dd0000;
+  border-color: #dd0000;
 }
 
 h2 {
@@ -51,8 +51,119 @@ p {
   overflow: hidden;
 }
 
-.progress-bar {
-  height: 100%;
+#path1 {
+  fill: #c3c3c3; 
+  stroke: none
+}
+
+.animation {
+  width: 600px; 
+  height: 150px;
+  background-color: #ddd;
+}
+
+.progress-container {
+  width: 800px;
+  height: 70px;
+  margin: 20px 0;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+.progress-container .progress-bar {
+  width: 20px;
+  margin-top: auto;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+}
+
+.progress-container.download .progress-bar {
+  animation-name: box_download;
   background-color: #007bff;
-  transition: width 0.5s;
+}
+
+.progress-container.upload .progress-bar {
+  animation-name: box_upload;
+  background-color: #28a745;
+}
+
+.progress-container .progress-bar > span {
+  display: none;
+}
+
+.progress-container .progress-bar:hover {
+  opacity: 0.5;
+}
+
+.progress-container .progress-bar:hover > span {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 0.8rem;
+  padding: 5px;
+  background-color: #000;
+  color: #fff;
+}
+
+.progress-container .progress-bar.zero {
+  width: 20px;
+  margin-top: auto;
+  animation: none !important
+}
+
+@keyframes box_download {
+  0%   {background-color: gray; height: 0px; opacity: 0;}
+  100% {background-color: #007bff; opacity: 1;}
+}
+
+@keyframes box_upload {
+  0%   {background-color: gray; height: 0px; opacity: 0;}
+  100% {background-color: #28a745; opacity: 1;}
+}
+
+
+.results_speed {
+  display: flex;
+  font-size: 2rem;
+  width: 100%;
+}
+.results_speed .details {
+  font-size: 0.8rem;
+}
+.results_speed > div {
+  margin: 0 10px;
+  width: 50%;
+}
+.results_speed_download {
+  color: #007bff;
+}
+.results_speed_upload {
+  color: #28a745;
+}
+
+.controls {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.results_ping {
+  margin-top: 20px;
+  font-size: 1.2rem;
+}
+
+.details > span {
+  font-size: 1rem;
+  color: #ccc;
+}
+.results_speed .label {
+  font-size: 0.8rem;
+  color: #ccc;
+  display: inline-block;
+  width: 85px;
 }

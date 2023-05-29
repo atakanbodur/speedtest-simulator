@@ -1,0 +1,11 @@
+# restart on failure
+
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "8000:10000"
+    volumes:
+      - .:/server
+
