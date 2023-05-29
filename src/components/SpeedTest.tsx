@@ -4,7 +4,6 @@ import Results from "./Results";
 import { create } from "../appSettings";
 import { STAT_REFRESH_INTERVAL, TIMEOUT, DOWNLOADED_FILE_SIZE, THREAD_COUNT, UPLOAD_FILE_SIZE } from "../constants";
 const appSettings = create();
-let continueDownloadUpload = false;
 
 const SpeedTest: React.FC = () => {
     const [ping, setPing] = useState<number | null>(null);
@@ -12,20 +11,14 @@ const SpeedTest: React.FC = () => {
     const [downloadProgress, setDownloadProgress] = useState<number>(0);
     const [downloadSpeed, setDownloadSpeed] = useState<number>(0);
     const [downloadSpeedHistory, setDownloadSpeedHistory] = useState<any[]>([]);
-    const [bucketDownloadSpeeds, setBucketDownloadSpeeds] = useState<number[]>([]);
-    const [bucketDownloadProgresses, setBucketDownloadProgresses] = useState<number[]>([]);
     const [downloadStartTime, setDownloadStartTime] = useState<number>(0);
 
     const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [uploadSpeed, setUploadSpeed] = useState<number>(0);
     const [uploadSpeedHistory, setUploadSpeedHistory] = useState<any[]>([]);
-    const [bucketUploadSpeeds, setBucketUploadSpeeds] = useState<number[]>([]);
-    const [bucketUploadProgresses, setBucketUploadProgresses] = useState<number[]>([]);
     const [uploadStartTime, setUploadStartTime] = useState<number>(0);
-
     const [continueDownloadOrUpload, setContinueDownloadOrUpload] = useState<boolean>(false);
-
-    const bucketLastCheckTimes: Map<number, number> = new Map();
+    const [lastTotals, setLastTotals] = useState<number[]>([0, 0]);
 
     let downloadUpdateTimer: NodeJS.Timer;
     let uploadUpdateTimer: NodeJS.Timer;
@@ -34,6 +27,13 @@ const SpeedTest: React.FC = () => {
     let _downloadStartTime = 0;
     let _uploadStartTime = 0;
 
+    let continueDownloadUpload = false;
+    const bucketLastCheckTimes: Map<number, number> = new Map();
+    const bucketDownloadSpeeds: number[] = [];
+    const bucketUploadSpeeds: number[] = [];
+    const bucketDownloadProgresses: number[] = [];
+    const bucketUploadProgresses: number[] = [];
+    const totals: number[] = [0, 0];
     // start test
     const startTest = async () => {
         console.log("Starting test...");
@@ -46,6 +46,10 @@ const SpeedTest: React.FC = () => {
         setDownloadSpeedHistory([]);
 
         // initialize buckets
+        bucketDownloadSpeeds.splice(0);
+        bucketUploadSpeeds.splice(0);
+        bucketDownloadProgresses.splice(0);
+        bucketUploadProgresses.splice(0);
         for (let i = 0; i < THREAD_COUNT; i++) {
             bucketDownloadSpeeds.push(0);
             bucketDownloadProgresses.push(0);
@@ -53,10 +57,10 @@ const SpeedTest: React.FC = () => {
             bucketUploadProgresses.push(0);
         }
 
-        setBucketDownloadSpeeds(bucketDownloadSpeeds);
-        setBucketDownloadProgresses(bucketDownloadProgresses);
-        setBucketUploadSpeeds(bucketUploadSpeeds);
-        setBucketUploadProgresses(bucketUploadProgresses);
+        // initialized totals (total downloaded, total uploaded)
+        totals[0] = 0;
+        totals[1] = 0;
+        setLastTotals([0, 0]);
 
         setDownloadStartTime(performance.now());
         _downloadStartTime = performance.now();
@@ -118,6 +122,7 @@ const SpeedTest: React.FC = () => {
                             const duration = (endTime - startTime) / 1000;
                             const speed = duration > 0 ? (size * 8) / duration / Math.pow(10, 6) : 0; // bytes per second
                             console.log("downloadSmallFiles | speed", size, duration, speed);
+                            totals[0] += size;
                             resolve(speed);
                         }
                     },
@@ -142,6 +147,9 @@ const SpeedTest: React.FC = () => {
     const updateProgress = (uploadOrDownload: string = "download") => {
         // get the average
         let downloadProgresses = uploadOrDownload === "download" ? bucketDownloadProgresses : bucketUploadProgresses;
+        
+        // update totals
+        setLastTotals(totals);
 
         const bucketAvg = downloadProgresses.reduce((a, b) => a + b, 0) / bucketDownloadProgresses.length;
         if (bucketAvg >= 100) {
@@ -170,9 +178,15 @@ const SpeedTest: React.FC = () => {
 
         bucketProgresses.forEach((progress, index) => {
             if (progress < 100) {
-                total += bucketDownloadSpeeds[index];
+                if (uploadOrDownload === "download") {
+                    total += bucketDownloadSpeeds[index];
+                } else {
+                    total += bucketUploadSpeeds[index];
+                }
             }
         });
+
+        console.log("updateSpeeds | total", total, bucketDownloadSpeeds, bucketUploadSpeeds, bucketProgresses);
 
         if (uploadOrDownload === "download") {
             // for download, we also add the last small download speed
@@ -268,35 +282,18 @@ const SpeedTest: React.FC = () => {
                         progress = (progressEvent.loaded / DOWNLOADED_FILE_SIZE) * 100;
                     }
 
-                    // console.log("download | bucketId: %s progress: %d", bucketId, progress, progressEvent);
+                    totals[0] += progressEvent.bytes;
 
-                    setBucketDownloadSpeeds((bucketDownloadSpeeds) => {
-                        if (bucketDownloadSpeeds[bucketId]) {
-                            bucketDownloadSpeeds[bucketId] = mbitPerSec; // * 0.75 + bucketDownloadSpeeds[bucketId] * 0.25;
-                        } else {
-                            bucketDownloadSpeeds[bucketId] = mbitPerSec;
-                        }
+                    // console.log("download | bucketId: %s progress", bucketId, progress, progressEvent);
 
-                        return bucketDownloadSpeeds;
-                    });
+                    if (bucketDownloadSpeeds[bucketId] !== undefined) {
+                        bucketDownloadSpeeds[bucketId] = mbitPerSec;
+                    }
 
-                    setBucketDownloadProgresses((bucketDownloadProgresses) => {
-                        bucketDownloadProgresses[bucketId] = progress;
-                        return bucketDownloadProgresses;
-                    });
+                    bucketDownloadProgresses[bucketId] = progress;
                 },
                 timeout: TIMEOUT,
             });
-            /*
-            const endTime = performance.now();
-
-            if (response.status === 200) {
-                const dataSize = response.data.byteLength;
-                const duration = (endTime - startTime) / 1000;
-                const mbitPerSec = ((dataSize / duration) * 8) / 1_000_000; // Convert to Mbps
-                setDownloadSpeed(mbitPerSec);
-            }
-            */
         } catch (error) {
             console.log("download | error in bucketId: %s | error: %s", bucketId, error);
         }
@@ -318,29 +315,21 @@ const SpeedTest: React.FC = () => {
 
                     const mbitPerSec = (progressEvent.bytes * 8) / duration / 1_000_000;
 
-                    // const progress = (progressEvent.loaded / DOWNLOADED_FILE_SIZE) * 100;
+                    totals[1] += progressEvent.bytes;
+
                     let progress = 0;
 
                     if (progressEvent.progress) {
                         progress = progressEvent.progress * 100;
                     } else {
-                        progress = (progressEvent.loaded / DOWNLOADED_FILE_SIZE) * 100;
+                        progress = (progressEvent.loaded / UPLOAD_FILE_SIZE) * 100;
                     }
 
-                    setBucketUploadSpeeds((bucketUploadSpeeds) => {
-                        if (bucketUploadSpeeds[bucketId]) {
-                            bucketUploadSpeeds[bucketId] = mbitPerSec; // * 0.75 + bucketDownloadSpeeds[bucketId] * 0.25;
-                        } else {
-                            bucketUploadSpeeds[bucketId] = mbitPerSec;
-                        }
+                    if (bucketUploadSpeeds[bucketId] !== undefined) {
+                        bucketUploadSpeeds[bucketId] = mbitPerSec;
+                    }
 
-                        return bucketDownloadSpeeds;
-                    });
-
-                    setBucketUploadProgresses((bucketUploadProgresses) => {
-                        bucketUploadProgresses[bucketId] = progress;
-                        return bucketUploadProgresses;
-                    });
+                    bucketUploadProgresses[bucketId] = progress;
                 },
             });
             const endTimeUpload = performance.now();
@@ -425,7 +414,14 @@ const SpeedTest: React.FC = () => {
                     );
                 })}
             </div>
-            <Results downloadSpeedHistory={downloadSpeedHistory} uploadSpeedHistory={uploadSpeedHistory} ping={ping} downloadStartTime={downloadStartTime} uploadStartTime={uploadStartTime} />
+            <Results
+                totals={lastTotals}
+                downloadSpeedHistory={downloadSpeedHistory}
+                uploadSpeedHistory={uploadSpeedHistory}
+                ping={ping}
+                downloadStartTime={downloadStartTime}
+                uploadStartTime={uploadStartTime}
+            />
         </div>
     );
 };

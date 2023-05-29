@@ -161,3 +161,9 @@ p {
   font-size: 1rem;
   color: #ccc;
 }
+.results_speed .label {
+  font-size: 0.8rem;
+  color: #ccc;
+  display: inline-block;
+  width: 85px;
+}
