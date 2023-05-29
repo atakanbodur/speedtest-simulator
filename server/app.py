@@ -20,7 +20,7 @@ def download(response_size):
     if response_size and response_size > 0:
         data = b'\0' * response_size
     else:
-        data = b'\0' * (10 ** 3) # 10MB of binary data
+        data = b'\0' * (10 ** 7) # 10MB of binary data
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     return data, 200, {'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment; filename=data-' + timestamp + '.bin'}
 
